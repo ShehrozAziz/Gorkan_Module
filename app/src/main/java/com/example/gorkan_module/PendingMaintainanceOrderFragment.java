@@ -18,20 +18,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PendingMaintainanceOrderFragment extends Fragment {
-    RecyclerView rvPendings;
+    public static RecyclerView rvPendings;
+    public static MaintenancePendingOrdersAdapter maintenanceAdapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view =  inflater.inflate(R.layout.fragment_pending_maintainance_order, container, false);
         rvPendings = view.findViewById(R.id.rvMPendings);
-        List<String> pendingOrders = new ArrayList<>();
-        pendingOrders.add("Order 1");
-        pendingOrders.add("Order 2");
-        pendingOrders.add("Order 3");
         rvPendings.setLayoutManager(new LinearLayoutManager(view.getContext()));
-        MaintenancePendingOrdersAdapter adapter = new MaintenancePendingOrdersAdapter(pendingOrders,view.getContext());
-        rvPendings.setAdapter(adapter);
+        PendingMaintainanceOrderFragment.maintenanceAdapter = new MaintenancePendingOrdersAdapter(MainActivity.requests,view.getContext());
+        rvPendings.setAdapter(maintenanceAdapter);
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
@@ -41,8 +38,8 @@ public class PendingMaintainanceOrderFragment extends Fragment {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 // Prevent full swipe, reveal the buttons without removing the item
-                adapter.showButtons(viewHolder.getAdapterPosition());
-                adapter.notifyItemChanged(viewHolder.getAdapterPosition()); // Reset the swipe state
+                maintenanceAdapter.showButtons(viewHolder.getAdapterPosition());
+                maintenanceAdapter.notifyItemChanged(viewHolder.getAdapterPosition()); // Reset the swipe state
             }
 
             @Override

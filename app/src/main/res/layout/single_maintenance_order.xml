@@ -13,7 +13,7 @@
         android:layout_height="match_parent"
         android:backgroundTint="@color/BG"
         android:clickable="true"
-        android:visibility="gone"
+        android:visibility="visible"
         app:cardCornerRadius="20dp">
 
         <LinearLayout
@@ -25,7 +25,7 @@
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="6"
+                android:layout_weight="4"
                 android:background="@drawable/ic_done"
                 android:clickable="false"
                 app:backgroundTint="@color/FG" />
@@ -62,8 +62,18 @@
             android:paddingVertical="10dp"
             android:paddingEnd="20dp"
             >
-
-
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Row Number: "
+                android:textStyle="normal"
+                android:fontFamily="@font/poppins_medium"
+                android:textColor="@color/FG"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:textSize="14sp"
+                android:id="@+id/tvRow"
+                />
             <Button
                 android:id="@+id/tvSwipeIndicator"
                 android:layout_width="40dp"
@@ -90,6 +100,7 @@
                 android:textColor="@color/FG"
 
                 app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@id/tvSwipeIndicator"
                 android:textSize="14sp"
                 android:id="@+id/tvGraveID"
@@ -97,39 +108,17 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Row Number: "
+                android:text="Column Number: "
                 android:textStyle="normal"
                 android:fontFamily="@font/poppins_medium"
                 android:textColor="@color/FG"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textSize="14sp"
-                android:id="@+id/tvRow"
-                />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Column Number: "
-                android:textStyle="bold"
-                android:fontFamily="@font/poppins_medium"
-                android:textColor="@color/FG"
-                app:layout_constraintTop_toBottomOf="@id/tvGraveID"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:textSize="14sp"
                 android:id="@+id/tvColumn"
                 />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Ready For Burial"
-                android:textStyle="bold"
-                android:fontFamily="@font/poppins_medium"
-                android:textColor="@color/FG"
-                app:layout_constraintTop_toBottomOf="@id/tvGraveID"
-                app:layout_constraintStart_toEndOf="@id/tvSwipeIndicator"
-                android:textSize="14sp"
-                android:id="@+id/tvOrderStatus"
-                />
+
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
 

@@ -1,29 +1,42 @@
 package com.example.gorkan_module;
 
+import static com.example.gorkan_module.SignIn.baseURL;
+
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
 public class MaintenancePendingOrdersAdapter extends RecyclerView.Adapter<MaintenancePendingOrdersAdapter.MaintenancePendingViewHolder> {
-    private List<String> orders;
+    private List<Parser.MaintenanceRequests> orders;
     private Context context;
     private int openedPosition = -1;  // No item is opened initially
     private int swipedPosition = -1;
 
-    public MaintenancePendingOrdersAdapter(List<String> orders, Context context) {
+    public MaintenancePendingOrdersAdapter(List<Parser.MaintenanceRequests> orders, Context context) {
         this.orders = orders;
         this.context = context;
     }
@@ -31,29 +44,67 @@ public class MaintenancePendingOrdersAdapter extends RecyclerView.Adapter<Mainte
     @NonNull
     @Override
     public MaintenancePendingViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.single_pending_order, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.single_maintenance_order, parent, false);
         return new MaintenancePendingViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull MaintenancePendingViewHolder holder, int position) {
-        String order = orders.get(position);
-        holder.tvGraveID.setText(order);
+        Parser.MaintenanceRequests order = orders.get(position);
+        holder.tvGraveID.setText("ID: " + order.getGraveID());
+
+        String[] parts = order.getGraveID().split("r|c");  // Split by 'r' and 'c'
+        String row = parts[1];
+        String column = parts[2];
+        holder.tvRow.setText( "Row Number: " + row );
+        holder.tvColumn.setText( "Column Number: " + column );
+
         if (position == swipedPosition) {
             holder.btnMoreInfo2.setVisibility(View.VISIBLE);
             holder.btnswipe.setText("Close ⬇\uFE0F");
-            holder.tvResidenceArea.setVisibility(View.INVISIBLE);
-            holder.tvUsername.setVisibility(View.INVISIBLE);
-            holder.tvMoistureSensor.setVisibility(View.INVISIBLE);
+            holder.tvRow.setVisibility(View.INVISIBLE);
+            holder.tvColumn.setVisibility(View.INVISIBLE);
             holder.btnswipe.setClickable(true);
         } else {
             holder.btnMoreInfo2.setVisibility(View.GONE);
             holder.btnswipe.setText("Swipe ⬆\uFE0F");
             holder.btnswipe.setClickable(false);
-            holder.tvResidenceArea.setVisibility(View.VISIBLE);
-            holder.tvUsername.setVisibility(View.VISIBLE);
-            holder.tvMoistureSensor.setVisibility(View.VISIBLE);
+            holder.tvRow.setVisibility(View.VISIBLE);
+            holder.tvColumn.setVisibility(View.VISIBLE);
         }
+
+        holder.btnMoreInfo2.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                builder.setTitle("Maintenance Confirmation");
+                builder.setMessage("Maintenance for the Grave ID: " + order.getGraveID() + " is done. Confirm?");
+
+                // Positive button (Yes)
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Logic when user confirms maintenance
+                        Completion( order.getGraveID(),order);
+                        dialog.dismiss();
+
+                    }
+                });
+
+                // Negative button (No)
+                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Logic when user cancels
+                        dialog.dismiss();
+                    }
+                });
+
+                // Show the AlertDialog
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        } );
 
         // Check if the current position is the opened one
         if (holder.getAdapterPosition() == openedPosition) {
@@ -78,6 +129,52 @@ public class MaintenancePendingOrdersAdapter extends RecyclerView.Adapter<Mainte
             }
         });
     }
+    public void Completion(String GraveID,Parser.MaintenanceRequests order)
+    {
+        // Create the ClientData object
+        RequestClasses.CompleteOrder Data = new RequestClasses.CompleteOrder("maintenance",GraveID,MainActivity.graveyard.getGraveyardId());
+
+        // Retrofit setupw
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(baseURL)
+                .addConverterFactory( GsonConverterFactory.create())
+                .build();
+
+        ApiService apiService = retrofit.create(ApiService.class);
+
+        // Call the login method
+        Call<ResponseClasses.CompleteResponse> call = apiService.completeorder(Data);
+
+        call.enqueue(new Callback<ResponseClasses.CompleteResponse>() {
+            public void onResponse(Call<ResponseClasses.CompleteResponse> call, Response<ResponseClasses.CompleteResponse> response) {
+                if (response.isSuccessful()) {
+                    ResponseClasses.CompleteResponse serverResponse = response.body();
+                    Log.d("API Response",response.body().toString());
+                    if (serverResponse != null && serverResponse.getMessage() != null) {
+                        // Successful login
+                        Log.d("API Response", "Complete successful");
+                        Toast.makeText(context, "Maintenance confirmed for Grave ID: " + GraveID, Toast.LENGTH_SHORT).show();
+                        orders.remove( order );
+                        notifyDataSetChanged();
+
+
+                    } else {
+                        // Handle unexpected null response
+                        Log.e("API Response", "Null or incomplete response from server");
+                    }
+                } else {
+                    Log.e("API Error", "Response failed: " + response.message());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseClasses.CompleteResponse> call, Throwable t) {
+                Log.e("API Error Fail", "Request failed: " + t.getMessage());
+                Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
 
     // Helper method to animate the visibility of the button (fade in/out)
     // Method to expand the Textual area and hide the btnMoreInfo button
@@ -188,7 +285,7 @@ public class MaintenancePendingOrdersAdapter extends RecyclerView.Adapter<Mainte
     }
 
     public static class MaintenancePendingViewHolder extends RecyclerView.ViewHolder {
-        TextView tvGraveID,tvGraveType,tvUsername,tvResidenceArea,tvMoistureSensor,tvStatus;
+        TextView tvGraveID,tvRow,tvColumn;
 
         Button btnswipe;
         MaterialCardView btnMoreInfo,mcvTextualArea,btnMoreInfo2;
@@ -196,14 +293,11 @@ public class MaintenancePendingOrdersAdapter extends RecyclerView.Adapter<Mainte
         public MaintenancePendingViewHolder(@NonNull View itemView) {
             super(itemView);
             tvGraveID = itemView.findViewById(R.id.tvGraveID);
+            tvColumn = itemView.findViewById( R.id.tvColumn );
+            tvRow = itemView.findViewById( R.id.tvRow );
             btnswipe = itemView.findViewById(R.id.tvSwipeIndicator);
             btnMoreInfo = itemView.findViewById(R.id.btnMoreInfo);
             mcvTextualArea = itemView.findViewById(R.id.mcvtextualarea);
-            tvGraveType = itemView.findViewById(R.id.tvGraveType);
-            tvMoistureSensor = itemView.findViewById(R.id.tvSensorEnability);
-            tvUsername = itemView.findViewById(R.id.tvUsername);
-            tvResidenceArea = itemView.findViewById(R.id.tvUserResidence);
-            tvStatus = itemView.findViewById(R.id.tvOrderStatus);
             btnMoreInfo2 = itemView.findViewById(R.id.btnMoreInfo2);
         }
     }

@@ -24,13 +24,9 @@ public class OrdersPagerAdapter extends FragmentStateAdapter {
             {
                 return new PendingOrdersFragment();
             }
-            case 2:
-            {
-                return new PendingMaintainanceOrderFragment();
-            }
             default:
             {
-                return new DeliveredFragment();
+                return new PendingMaintainanceOrderFragment();
             }
         }
     }
@@ -38,6 +34,6 @@ public class OrdersPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 4;
+        return 3;
     }
 }
